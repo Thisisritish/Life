@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <!-- Force desktop-style layout on mobile -->
+  <meta name="viewport" content="width=1280, initial-scale=1, maximum-scale=1, user-scalable=yes" />
+  <title>Life Calendar · 28490 Days</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a0a0c;
+      --surface: #121216;
+      --surface-2: #1a1a20;
+      --border: #2a2a32;
+      --text: #e8e8ed;
+      --text-dim: #8a8a96;
+      --accent: #6ee7b7;
+      --today: #22d3ee;
+      --past-text: #71717a;
+      --radius: 10px;
+      --row-height: 148px;
+      --header-h: 52px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+      font-feature-settings: "liga" 0, "calt" 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Header ─────────────────────────────────────── */
+    header {
+      height: var(--header-h);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      padding: 0 16px;
+      background: rgba(10, 10, 12, 0.96);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      z-index: 50;
+    }
+
+    .logo {
+      font-weight: 600;
+      font-size: 13px;
+      letter-spacing: 0.04em;
+      color: var(--accent);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .progress-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 220px;
+      flex-shrink: 0;
+    }
+
+    .progress-bar {
+      flex: 1;
+      height: 5px;
+      background: #1e1e24;
+      border-radius: 99px;
+      overflow: hidden;
+      border: 1px solid #2a2a32;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #34d399, #22d3ee);
+      border-radius: 99px;
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+
+    .progress-pct {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent);
+      min-width: 42px;
+      text-align: right;
+    }
+
+    .info-pill {
+      font-size: 11px;
+      color: var(--text-dim);
+      padding: 4px 9px;
+      background: var(--surface-2);
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 3px;
+      background: var(--surface);
+      padding: 3px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .tab-btn {
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 5px 11px;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .tab-btn.active { background: #2a2a32; color: var(--text); }
+    .tab-btn:hover:not(.active) { color: var(--text); }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .date-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .date-wrap input[type="date"] {
+      font-family: inherit;
+      font-size: 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      padding: 5px 32px 5px 9px;
+      outline: none;
+      cursor: pointer;
+      width: 138px;
+      color-scheme: dark;
+    }
+    .date-wrap input[type="date"]:focus {
+      border-color: var(--accent);
+    }
+    .date-wrap input[type="date"]::-webkit-calendar-picker-indicator {
+      opacity: 0;
+      position: absolute;
+      right: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+
+    .cal-icon {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 14px;
+      height: 14px;
+      pointer-events: none;
+      color: var(--text-dim);
+    }
+
+    button.ctrl {
+      font-family: inherit;
+      font-size: 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      padding: 5px 9px;
+      outline: none;
+      cursor: pointer;
+    }
+    button.ctrl:hover { border-color: var(--accent); }
+    button.ctrl.primary {
+      background: linear-gradient(135deg, #34d399, #22d3ee);
+      color: #0a0a0c;
+      border: none;
+      font-weight: 600;
+    }
+
+    /* ── Centered stats bar ─────────────────────────── */
+    .stats-bar {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-dim);
+      padding: 7px 16px;
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .stats-bar strong {
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .stats-bar .current-label strong {
+      color: var(--today);
+    }
+
+    /* ── Day view ───────────────────────────────────── */
+    #dayView {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-height: 0;
+    }
+    #dayView.hidden { display: none; }
+
+    .weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      padding: 5px 16px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+    .weekdays span { text-align: center; }
+
+    #scroller {
+      flex: 1;
+      overflow-y: auto;
+      position: relative;
+      min-height: 0;
+    }
+    #scroller::-webkit-scrollbar { width: 8px; }
+    #scroller::-webkit-scrollbar-thumb { background: #33333c; border-radius: 4px; }
+
+    #viewport { position: relative; width: 100%; }
+    #content { position: absolute; top: 0; left: 0; right: 0; }
+
+    .week-row {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      padding: 6px 16px;
+      height: var(--row-height);
+    }
+
+    .day {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      text-align: center;
+      transition: transform 0.12s, border-color 0.12s;
+      position: relative;
+      overflow: hidden;
+    }
+    .day:hover { transform: translateY(-2px); border-color: #4a4a55; }
+    .day.past { background: #141416; border-color: #252528; }
+    .day.past .line { color: var(--past-text); }
+    .day.today {
+      border-color: var(--today);
+      box-shadow: 0 0 0 1px var(--today), 0 0 20px rgba(34, 211, 238, 0.25);
+      background: linear-gradient(160deg, #0f1c22, #121216);
+    }
+    .day.today .line { color: var(--today); }
+    .day.future { border-color: transparent; }
+    .day.f0 { background: linear-gradient(145deg, #1a1f2e, #121216); border-color: #2a3350; }
+    .day.f1 { background: linear-gradient(145deg, #1a2420, #121216); border-color: #2a4038; }
+    .day.f2 { background: linear-gradient(145deg, #221a28, #121216); border-color: #3a2a45; }
+    .day.f3 { background: linear-gradient(145deg, #1e1e2a, #121216); border-color: #32324a; }
+    .day.f4 { background: linear-gradient(145deg, #1c2228, #121216); border-color: #2e3a45; }
+    .day.f5 { background: linear-gradient(145deg, #241e1a, #121216); border-color: #40352a; }
+    .day.f6 { background: linear-gradient(145deg, #1a2426, #121216); border-color: #2a4045; }
+
+    .line {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      line-height: 1.25;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
+    .day-marker {
+      position: absolute;
+      top: 6px; right: 6px;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--today);
+      opacity: 0;
+    }
+    .day.today .day-marker { opacity: 1; box-shadow: 0 0 8px var(--today); }
+    .day.empty { background: transparent; border: none; pointer-events: none; }
+
+    /* ── Grid views ─────────────────────────────────── */
+    .grid-view {
+      flex: 1;
+      display: none;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .grid-view.active { display: flex; }
+
+    .full-grid {
+      flex: 1;
+      display: grid;
+      gap: 2px;
+      min-height: 0;
+      width: 100%;
+      padding: 0 12px 12px;
+    }
+
+    .weeks-full {
+      grid-template-columns: repeat(74, 1fr);
+      grid-template-rows: repeat(55, 1fr);
+    }
+
+    .months-full {
+      grid-template-columns: repeat(36, 1fr);
+      grid-template-rows: repeat(26, 1fr);
+    }
+
+    .sq {
+      border-radius: 2px;
+      background: #1e1e24;
+      border: 1px solid #2a2a32;
+      cursor: default;
+      transition: transform 0.1s, box-shadow 0.1s;
+      min-width: 0;
+      min-height: 0;
+    }
+    .sq.lived {
+      background: #2a3a35;
+      border-color: #3a5a4e;
+    }
+    .sq.current {
+      background: var(--today);
+      border-color: #67e8f9;
+      box-shadow: 0 0 8px rgba(34, 211, 238, 0.55);
+      z-index: 2;
+    }
+    .sq:hover {
+      transform: scale(1.6);
+      z-index: 5;
+      box-shadow: 0 0 10px rgba(110, 231, 183, 0.45);
+    }
+
+    /* Tooltip */
+    #tooltip {
+      position: fixed;
+      pointer-events: none;
+      background: #1a1a22;
+      border: 1px solid #3a3a48;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 12px;
+      line-height: 1.55;
+      color: var(--text);
+      z-index: 100;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: opacity 0.12s, transform 0.12s;
+      white-space: nowrap;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+    }
+    #tooltip.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    #tooltip .tt-title { color: var(--accent); font-weight: 600; margin-bottom: 3px; }
+    #tooltip .tt-line { color: var(--text-dim); }
+
+    @media (max-width: 1200px) {
+      header { flex-wrap: wrap; height: auto; padding: 8px 12px; gap: 10px; }
+      .progress-wrap { width: 180px; }
+      .line { font-size: 9px; }
+      :root { --row-height: 120px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">LIFE · 28490 DAYS</div>
+
+    <div class="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-pct" id="progressPct">00.00%</div>
+    </div>
+
+    <div class="info-pill">2007-JUN-15 → 2085-JUN-14</div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="days">Days</button>
+      <button class="tab-btn" data-tab="weeks">Weeks</button>
+      <button class="tab-btn" data-tab="months">Months</button>
+    </div>
+
+    <div class="controls">
+      <div class="date-wrap">
+        <input type="date" id="jumpDate" min="2007-06-15" max="2085-06-14" />
+        <svg class="cal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+      </div>
+      <button class="ctrl primary" id="jumpBtn">Jump</button>
+      <button class="ctrl" id="todayBtn">Today</button>
+      <button class="ctrl" id="birthBtn">Birth</button>
+      <button class="ctrl" id="endBtn">Last</button>
+    </div>
+  </header>
+
+  <!-- DAYS -->
+  <div id="dayView">
+    <div class="stats-bar" id="daysStats"></div>
+    <div class="weekdays">
+      <span>Fri</span><span>Sat</span><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span>
+    </div>
+    <div id="scroller">
+      <div id="viewport"><div id="content"></div></div>
+    </div>
+  </div>
+
+  <!-- WEEKS -->
+  <div id="weeksView" class="grid-view">
+    <div class="stats-bar" id="weeksStats"></div>
+    <div class="full-grid weeks-full" id="weeksGrid"></div>
+  </div>
+
+  <!-- MONTHS -->
+  <div id="monthsView" class="grid-view">
+    <div class="stats-bar" id="monthsStats"></div>
+    <div class="full-grid months-full" id="monthsGrid"></div>
+  </div>
+
+  <div id="tooltip">
+    <div class="tt-title"></div>
+    <div class="tt-line" id="ttDates"></div>
+    <div class="tt-line" id="ttAges"></div>
+  </div>
+
+  <script>
+    // ─── Constants ───────────────────────────────────────────────
+    const BIRTH = new Date(2007, 5, 15);
+    const END   = new Date(2085, 5, 14);
+    const TOTAL_DAYS   = 28490;
+    const TOTAL_WEEKS  = 4070;
+    const TOTAL_MONTHS = 936;
+    const WEEK_START  = 5;
+    const ROW_H = 148;
+    const BUFFER = 6;
+    const MONTHS = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+
+    // ─── Helpers ─────────────────────────────────────────────────
+    function addDays(date, n) {
+      const d = new Date(date);
+      d.setDate(d.getDate() + n);
+      return d;
+    }
+    function daysBetween(a, b) {
+      const u1 = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+      const u2 = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+      return Math.floor((u2 - u1) / 86400000);
+    }
+    function formatDate(d) {
+      return `${d.getFullYear()}-${MONTHS[d.getMonth()]}-${String(d.getDate()).padStart(2,"0")}`;
+    }
+    function ageYMD(target) {
+      let y = target.getFullYear() - BIRTH.getFullYear();
+      let m = target.getMonth() - BIRTH.getMonth();
+      let d = target.getDate() - BIRTH.getDate();
+      if (d < 0) { m--; d += new Date(target.getFullYear(), target.getMonth(), 0).getDate(); }
+      if (m < 0) { y--; m += 12; }
+      const ys = String(Math.max(0,y)).padStart(2,"0");
+      const ms = String(Math.max(0,m)).padStart(2,"0");
+      const ds = String(Math.max(0,d)).padStart(2,"0");
+      return { y: ys, m: ms, d: ds, str: () => `${ys}Y-${ms}M-${ds}D` };
+    }
+    function isSameDay(a, b) {
+      return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
+    }
+    function startOfWeek(d) {
+      const day = d.getDay();
+      return addDays(d, -((day - WEEK_START + 7) % 7));
+    }
+    function lifeWeek(date) {
+      return Math.floor(daysBetween(firstWeekStart, startOfWeek(date)) / 7) + 1;
+    }
+
+    const firstWeekStart = startOfWeek(BIRTH);
+    const TOTAL_WEEKS_CALC = Math.floor(daysBetween(firstWeekStart, startOfWeek(END)) / 7) + 1;
+
+    function customMonthStart(m) {
+      const d = new Date(BIRTH);
+      d.setMonth(d.getMonth() + (m - 1));
+      d.setDate(15);
+      return d;
+    }
+    function customMonthEnd(m) {
+      const start = customMonthStart(m);
+      const end = new Date(start);
+      end.setMonth(end.getMonth() + 1);
+      end.setDate(14);
+      return end;
+    }
+    function lifeMonth(date) {
+      let y = date.getFullYear() - 2007;
+      let m = date.getMonth() - 5;
+      let day = date.getDate();
+      let idx = y * 12 + m + 1;
+      if (day < 15) idx -= 1;
+      return Math.max(1, Math.min(TOTAL_MONTHS, idx));
+    }
+
+    // ─── Progress + Days stats ───────────────────────────────────
+    function updateProgressAndDaysStats() {
+      const today = new Date(); today.setHours(0,0,0,0);
+      let current = daysBetween(BIRTH, today) + 1;
+      if (current < 1) current = 1;
+      if (current > TOTAL_DAYS) current = TOTAL_DAYS;
+
+      const lived = Math.max(0, current - 1);
+      const remaining = TOTAL_DAYS - current;
+
+      const pct = (current / TOTAL_DAYS) * 100;
+      document.getElementById("progressFill").style.width = pct + "%";
+      document.getElementById("progressPct").textContent = pct.toFixed(2).padStart(5,"0") + "%";
+
+      document.getElementById("daysStats").innerHTML = `
+        <span>Lived <strong>${lived}</strong></span>
+        <span class="current-label">Current <strong>${current}</strong></span>
+        <span>Remaining <strong>${remaining}</strong></span>
+        <span>Total <strong>${TOTAL_DAYS}</strong></span>
+      `;
+    }
+
+    // ─── Day view ────────────────────────────────────────────────
+    const scroller = document.getElementById("scroller");
+    const viewport = document.getElementById("viewport");
+    const content  = document.getElementById("content");
+    viewport.style.height = `${TOTAL_WEEKS_CALC * ROW_H}px`;
+
+    function renderDays() {
+      const scrollTop = scroller.scrollTop;
+      const viewH = scroller.clientHeight;
+      let startWeek = Math.max(0, Math.floor(scrollTop / ROW_H) - BUFFER);
+      let endWeek   = Math.min(TOTAL_WEEKS_CALC - 1, Math.ceil((scrollTop + viewH) / ROW_H) + BUFFER);
+
+      const frag = document.createDocumentFragment();
+      const today = new Date(); today.setHours(0,0,0,0);
+
+      for (let w = startWeek; w <= endWeek; w++) {
+        const weekStart = addDays(firstWeekStart, w * 7);
+        const row = document.createElement("div");
+        row.className = "week-row";
+        row.style.cssText = `position:absolute;top:${w*ROW_H}px;left:0;right:0`;
+
+        for (let i = 0; i < 7; i++) {
+          const cellDate = addDays(weekStart, i);
+          const card = document.createElement("div");
+          if (cellDate < BIRTH || cellDate > END) {
+            card.className = "day empty";
+            row.appendChild(card);
+            continue;
+          }
+          const num = daysBetween(BIRTH, cellDate) + 1;
+          const weekN = lifeWeek(cellDate);
+          const age = ageYMD(cellDate);
+          const isPast = cellDate < today;
+          const isToday = isSameDay(cellDate, today);
+          const isFuture = cellDate > today;
+
+          card.className = "day";
+          if (isPast) card.classList.add("past");
+          if (isToday) card.classList.add("today");
+          if (isFuture) { card.classList.add("future"); card.classList.add("f"+(w%7)); }
+
+          card.innerHTML = `
+            <div class="line">${formatDate(cellDate)}</div>
+            <div class="line">${age.y}Y-${age.m}M-${age.d}D</div>
+            <div class="line">DAYS--${String(num).padStart(5,"0")}</div>
+            <div class="line">WEEKS--${String(weekN).padStart(4,"0")}</div>
+            <div class="day-marker"></div>`;
+          row.appendChild(card);
+        }
+        frag.appendChild(row);
+      }
+      content.innerHTML = "";
+      content.appendChild(frag);
+    }
+
+    function scrollToDate(date) {
+      if (date < BIRTH) date = BIRTH;
+      if (date > END) date = END;
+      const weekIdx = Math.floor(daysBetween(firstWeekStart, startOfWeek(date)) / 7);
+      scroller.scrollTop = Math.max(0, weekIdx * ROW_H - scroller.clientHeight / 3);
+      requestAnimationFrame(renderDays);
+    }
+
+    // ─── Tooltip ─────────────────────────────────────────────────
+    const tooltip = document.getElementById("tooltip");
+    function showTooltip(e, title, dates, ages) {
+      tooltip.querySelector(".tt-title").textContent = title;
+      document.getElementById("ttDates").textContent = dates;
+      document.getElementById("ttAges").textContent = ages;
+      tooltip.classList.add("visible");
+      moveTooltip(e);
+    }
+    function moveTooltip(e) {
+      const pad = 12;
+      let x = e.clientX + pad;
+      let y = e.clientY + pad;
+      if (x + 240 > window.innerWidth - 6) x = e.clientX - 240 - pad;
+      if (y + 80 > window.innerHeight - 6) y = e.clientY - 80 - pad;
+      tooltip.style.left = x + "px";
+      tooltip.style.top  = y + "px";
+    }
+    function hideTooltip() { tooltip.classList.remove("visible"); }
+
+    // ─── Weeks ───────────────────────────────────────────────────
+    function buildWeeksView() {
+      const grid = document.getElementById("weeksGrid");
+      grid.innerHTML = "";
+      const today = new Date(); today.setHours(0,0,0,0);
+      let curWeek = lifeWeek(today);
+      if (curWeek < 1) curWeek = 1;
+      if (curWeek > TOTAL_WEEKS) curWeek = TOTAL_WEEKS;
+
+      let lived = 0;
+      for (let w = 1; w <= TOTAL_WEEKS; w++) {
+        const sq = document.createElement("div");
+        sq.className = "sq";
+        if (w < curWeek) { sq.classList.add("lived"); lived++; }
+        if (w === curWeek) sq.classList.add("current");
+
+        const weekStart = addDays(firstWeekStart, (w - 1) * 7);
+        const weekEnd   = addDays(weekStart, 6);
+        const dStart = weekStart < BIRTH ? BIRTH : weekStart;
+        const dEnd   = weekEnd > END ? END : weekEnd;
+
+        sq.addEventListener("mouseenter", e => {
+          showTooltip(e,
+            `WEEKS--${String(w).padStart(4,"0")}`,
+            `${formatDate(dStart)} → ${formatDate(dEnd)}`,
+            `${ageYMD(dStart).str()} → ${ageYMD(dEnd).str()}`
+          );
+        });
+        sq.addEventListener("mousemove", moveTooltip);
+        sq.addEventListener("mouseleave", hideTooltip);
+        grid.appendChild(sq);
+      }
+
+      const remaining = TOTAL_WEEKS - lived - 1;
+      document.getElementById("weeksStats").innerHTML = `
+        <span>Lived <strong>${lived}</strong></span>
+        <span class="current-label">Current <strong>${curWeek}</strong></span>
+        <span>Remaining <strong>${Math.max(0,remaining)}</strong></span>
+        <span>Total <strong>${TOTAL_WEEKS}</strong></span>
+      `;
+    }
+
+    // ─── Months ──────────────────────────────────────────────────
+    function buildMonthsView() {
+      const grid = document.getElementById("monthsGrid");
+      grid.innerHTML = "";
+      const today = new Date(); today.setHours(0,0,0,0);
+      let curMonth = lifeMonth(today);
+      if (curMonth < 1) curMonth = 1;
+      if (curMonth > TOTAL_MONTHS) curMonth = TOTAL_MONTHS;
+
+      let lived = 0;
+      for (let m = 1; m <= TOTAL_MONTHS; m++) {
+        const sq = document.createElement("div");
+        sq.className = "sq";
+        if (m < curMonth) { sq.classList.add("lived"); lived++; }
+        if (m === curMonth) sq.classList.add("current");
+
+        let dStart = customMonthStart(m);
+        let dEnd   = customMonthEnd(m);
+        if (dStart < BIRTH) dStart = BIRTH;
+        if (dEnd > END) dEnd = END;
+
+        sq.addEventListener("mouseenter", e => {
+          showTooltip(e,
+            `MONTHS--${String(m).padStart(3,"0")}`,
+            `${formatDate(dStart)} → ${formatDate(dEnd)}`,
+            `${ageYMD(dStart).str()} → ${ageYMD(dEnd).str()}`
+          );
+        });
+        sq.addEventListener("mousemove", moveTooltip);
+        sq.addEventListener("mouseleave", hideTooltip);
+        grid.appendChild(sq);
+      }
+
+      const remaining = TOTAL_MONTHS - lived - 1;
+      document.getElementById("monthsStats").innerHTML = `
+        <span>Lived <strong>${lived}</strong></span>
+        <span class="current-label">Current <strong>${curMonth}</strong></span>
+        <span>Remaining <strong>${Math.max(0,remaining)}</strong></span>
+        <span>Total <strong>${TOTAL_MONTHS}</strong></span>
+      `;
+    }
+
+    // ─── Tabs ────────────────────────────────────────────────────
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        const tab = btn.dataset.tab;
+
+        document.getElementById("dayView").classList.toggle("hidden", tab !== "days");
+        document.getElementById("weeksView").classList.toggle("active", tab === "weeks");
+        document.getElementById("monthsView").classList.toggle("active", tab === "months");
+      });
+    });
+
+    // ─── Events ──────────────────────────────────────────────────
+    let ticking = false;
+    scroller.addEventListener("scroll", () => {
+      if (!ticking) {
+        requestAnimationFrame(() => { renderDays(); ticking = false; });
+        ticking = true;
+      }
+    });
+
+    function goToDaysAndScroll(date) {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelector('.tab-btn[data-tab="days"]').classList.add("active");
+      document.getElementById("dayView").classList.remove("hidden");
+      document.getElementById("weeksView").classList.remove("active");
+      document.getElementById("monthsView").classList.remove("active");
+      scrollToDate(date);
+    }
+
+    document.getElementById("jumpBtn").addEventListener("click", () => {
+      const val = document.getElementById("jumpDate").value;
+      if (!val) return;
+      goToDaysAndScroll(new Date(val + "T00:00:00"));
+    });
+
+    document.getElementById("todayBtn").addEventListener("click", () => goToDaysAndScroll(new Date()));
+    document.getElementById("birthBtn").addEventListener("click", () => goToDaysAndScroll(BIRTH));
+    document.getElementById("endBtn").addEventListener("click", () => goToDaysAndScroll(END));
+
+    document.getElementById("jumpDate").addEventListener("keydown", e => {
+      if (e.key === "Enter") document.getElementById("jumpBtn").click();
+    });
+
+    const jumpDate = document.getElementById("jumpDate");
+    jumpDate.addEventListener("click", () => {
+      if (typeof jumpDate.showPicker === "function") {
+        try { jumpDate.showPicker(); } catch (_) {}
+      }
+    });
+
+    // ─── Init ────────────────────────────────────────────────────
+    updateProgressAndDaysStats();
+    buildWeeksView();
+    buildMonthsView();
+    renderDays();
+    requestAnimationFrame(() => scrollToDate(new Date()));
+
+    jumpDate.value = new Date().toISOString().slice(0, 10);
+    window.addEventListener("resize", () => renderDays());
+  </script>
+</body>
+</html>
