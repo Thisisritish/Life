@@ -2,13 +2,281 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <!-- Force desktop-style layout on mobile -->
-  <meta name="viewport" content="width=1280, initial-scale=1, maximum-scale=1, user-scalable=yes" />
-  <title>Life Calendar · 28490 Days</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ritish Lamsal · Life Tools</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
+    :root {
+      --bg: #0a0a0c;
+      --sidebar: #0f0f12;
+      --surface: #15151a;
+      --border: #2a2a32;
+      --text: #e8e8ed;
+      --text-dim: #8a8a96;
+      --accent: #6ee7b7;
+      --today: #22d3ee;
+      --hover: #1a1a22;
+      --sidebar-w-exp: 220px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+
+    .layout {
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+      position: relative;
+    }
+
+    /* ── Compact three-line toggle ────────────────────── */
+    .menu-btn {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      z-index: 40;
+      width: 32px;
+      height: 32px;
+      border-radius: 7px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 0;
+      transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+    }
+
+    .menu-btn:hover {
+      border-color: var(--accent);
+      background: #1a1a22;
+      box-shadow: 0 0 0 1px rgba(110, 231, 183, 0.15);
+    }
+
+    .menu-btn .line {
+      display: block;
+      width: 14px;
+      height: 1.5px;
+      background: var(--text-dim);
+      border-radius: 1px;
+      transition: background 0.15s, transform 0.2s, opacity 0.2s;
+    }
+
+    .menu-btn:hover .line {
+      background: var(--accent);
+    }
+
+    /* X when open */
+    .menu-btn.open .line:nth-child(1) {
+      transform: translateY(5.5px) rotate(45deg);
+      background: var(--accent);
+    }
+    .menu-btn.open .line:nth-child(2) {
+      opacity: 0;
+    }
+    .menu-btn.open .line:nth-child(3) {
+      transform: translateY(-5.5px) rotate(-45deg);
+      background: var(--accent);
+    }
+
+    /* ── Sidebar ─────────────────────────────────────── */
+    aside {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: var(--sidebar-w-exp);
+      background: var(--sidebar);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 52px 0 20px;   /* top space so brand sits below the hamburger */
+      z-index: 30;
+      transform: translateX(-100%);
+      transition: transform 0.25s ease;
+      box-shadow: 4px 0 24px rgba(0,0,0,0.35);
+    }
+
+    aside.open {
+      transform: translateX(0);
+    }
+
+    .brand {
+      padding: 0 18px 18px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 14px;
+    }
+
+    .brand-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--accent);
+      line-height: 1.3;
+    }
+
+    .brand-sub {
+      font-size: 10px;
+      color: var(--text-dim);
+      margin-top: 4px;
+      letter-spacing: 0.04em;
+    }
+
+    nav {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 0 10px;
+      flex: 1;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 12px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-dim);
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.15s ease;
+      width: 100%;
+    }
+
+    .nav-item:hover {
+      background: var(--hover);
+      color: var(--text);
+      border-color: var(--border);
+    }
+
+    .nav-item.active {
+      background: linear-gradient(135deg, rgba(52, 211, 153, 0.12), rgba(34, 211, 238, 0.08));
+      color: var(--accent);
+      border-color: rgba(110, 231, 183, 0.25);
+    }
+
+    .nav-item .icon {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      opacity: 0.85;
+    }
+
+    .nav-item.active .icon {
+      opacity: 1;
+    }
+
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 20;
+    }
+
+    .overlay.visible {
+      display: block;
+    }
+
+    main {
+      flex: 1;
+      min-width: 0;
+      position: relative;
+      background: var(--bg);
+      width: 100%;
+    }
+
+    .panel {
+      position: absolute;
+      inset: 0;
+      border: none;
+      width: 100%;
+      height: 100%;
+      display: none;
+      background: var(--bg);
+    }
+
+    .panel.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <button class="menu-btn" id="menuBtn" aria-label="Open menu">
+    <span class="line"></span>
+    <span class="line"></span>
+    <span class="line"></span>
+  </button>
+
+  <div class="overlay" id="overlay"></div>
+
+  <div class="layout">
+    <aside id="sidebar">
+      <div class="brand">
+        <div class="brand-title">RITISH LAMSAL</div>
+        <div class="brand-sub">PERSONAL LIFE TOOLS</div>
+      </div>
+
+      <nav>
+        <button class="nav-item active" data-panel="memento" id="navMemento">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+            <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/>
+          </svg>
+          Memento Mori
+        </button>
+
+        <button class="nav-item" data-panel="age" id="navAge">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+            <path d="M9 16l2 2 4-4"/>
+          </svg>
+          Age Calendar
+        </button>
+      </nav>
+    </aside>
+
+    <main>
+      <iframe
+        class="panel active"
+        id="panel-memento"
+        title="Memento Mori — Life Calendar"
+        srcdoc="&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;UTF-8&quot; /&gt;
+  &lt;!-- Force desktop-style layout on mobile --&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=1280, initial-scale=1, maximum-scale=1, user-scalable=yes&quot; /&gt;
+  &lt;title&gt;Life Calendar · 28490 Days&lt;/title&gt;
+  &lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.googleapis.com&quot; /&gt;
+  &lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.gstatic.com&quot; crossorigin /&gt;
+  &lt;link href=&quot;https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&amp;display=swap&quot; rel=&quot;stylesheet&quot; /&gt;
+  &lt;style&gt;
     :root {
       --bg: #0a0a0c;
       --surface: #121216;
@@ -30,8 +298,8 @@
       height: 100%;
       background: var(--bg);
       color: var(--text);
-      font-family: "JetBrains Mono", ui-monospace, monospace;
-      font-feature-settings: "liga" 0, "calt" 0;
+      font-family: &quot;JetBrains Mono&quot;, ui-monospace, monospace;
+      font-feature-settings: &quot;liga&quot; 0, &quot;calt&quot; 0;
       -webkit-font-smoothing: antialiased;
     }
 
@@ -147,7 +415,7 @@
       align-items: center;
     }
 
-    .date-wrap input[type="date"] {
+    .date-wrap input[type=&quot;date&quot;] {
       font-family: inherit;
       font-size: 12px;
       border-radius: 6px;
@@ -160,10 +428,10 @@
       width: 138px;
       color-scheme: dark;
     }
-    .date-wrap input[type="date"]:focus {
+    .date-wrap input[type=&quot;date&quot;]:focus {
       border-color: var(--accent);
     }
-    .date-wrap input[type="date"]::-webkit-calendar-picker-indicator {
+    .date-wrap input[type=&quot;date&quot;]::-webkit-calendar-picker-indicator {
       opacity: 0;
       position: absolute;
       right: 0;
@@ -410,72 +678,72 @@
       .line { font-size: 9px; }
       :root { --row-height: 120px; }
     }
-  </style>
-</head>
-<body>
-  <header>
-    <div class="logo">LIFE · 28490 DAYS</div>
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;header&gt;
+    &lt;div class=&quot;logo&quot;&gt;LIFE · 28490 DAYS&lt;/div&gt;
 
-    <div class="progress-wrap">
-      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-      <div class="progress-pct" id="progressPct">00.00%</div>
-    </div>
+    &lt;div class=&quot;progress-wrap&quot;&gt;
+      &lt;div class=&quot;progress-bar&quot;&gt;&lt;div class=&quot;progress-fill&quot; id=&quot;progressFill&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+      &lt;div class=&quot;progress-pct&quot; id=&quot;progressPct&quot;&gt;00.00%&lt;/div&gt;
+    &lt;/div&gt;
 
-    <div class="info-pill">2007-JUN-15 → 2085-JUN-14</div>
+    &lt;div class=&quot;info-pill&quot;&gt;2007-JUN-15 → 2085-JUN-14&lt;/div&gt;
 
-    <div class="tabs">
-      <button class="tab-btn active" data-tab="days">Days</button>
-      <button class="tab-btn" data-tab="weeks">Weeks</button>
-      <button class="tab-btn" data-tab="months">Months</button>
-    </div>
+    &lt;div class=&quot;tabs&quot;&gt;
+      &lt;button class=&quot;tab-btn active&quot; data-tab=&quot;days&quot;&gt;Days&lt;/button&gt;
+      &lt;button class=&quot;tab-btn&quot; data-tab=&quot;weeks&quot;&gt;Weeks&lt;/button&gt;
+      &lt;button class=&quot;tab-btn&quot; data-tab=&quot;months&quot;&gt;Months&lt;/button&gt;
+    &lt;/div&gt;
 
-    <div class="controls">
-      <div class="date-wrap">
-        <input type="date" id="jumpDate" min="2007-06-15" max="2085-06-14" />
-        <svg class="cal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-          <line x1="16" y1="2" x2="16" y2="6"/>
-          <line x1="8" y1="2" x2="8" y2="6"/>
-          <line x1="3" y1="10" x2="21" y2="10"/>
-        </svg>
-      </div>
-      <button class="ctrl primary" id="jumpBtn">Jump</button>
-      <button class="ctrl" id="todayBtn">Today</button>
-      <button class="ctrl" id="birthBtn">Birth</button>
-      <button class="ctrl" id="endBtn">Last</button>
-    </div>
-  </header>
+    &lt;div class=&quot;controls&quot;&gt;
+      &lt;div class=&quot;date-wrap&quot;&gt;
+        &lt;input type=&quot;date&quot; id=&quot;jumpDate&quot; min=&quot;2007-06-15&quot; max=&quot;2085-06-14&quot; /&gt;
+        &lt;svg class=&quot;cal-icon&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;&gt;
+          &lt;rect x=&quot;3&quot; y=&quot;4&quot; width=&quot;18&quot; height=&quot;18&quot; rx=&quot;2&quot; ry=&quot;2&quot;/&gt;
+          &lt;line x1=&quot;16&quot; y1=&quot;2&quot; x2=&quot;16&quot; y2=&quot;6&quot;/&gt;
+          &lt;line x1=&quot;8&quot; y1=&quot;2&quot; x2=&quot;8&quot; y2=&quot;6&quot;/&gt;
+          &lt;line x1=&quot;3&quot; y1=&quot;10&quot; x2=&quot;21&quot; y2=&quot;10&quot;/&gt;
+        &lt;/svg&gt;
+      &lt;/div&gt;
+      &lt;button class=&quot;ctrl primary&quot; id=&quot;jumpBtn&quot;&gt;Jump&lt;/button&gt;
+      &lt;button class=&quot;ctrl&quot; id=&quot;todayBtn&quot;&gt;Today&lt;/button&gt;
+      &lt;button class=&quot;ctrl&quot; id=&quot;birthBtn&quot;&gt;Birth&lt;/button&gt;
+      &lt;button class=&quot;ctrl&quot; id=&quot;endBtn&quot;&gt;Last&lt;/button&gt;
+    &lt;/div&gt;
+  &lt;/header&gt;
 
-  <!-- DAYS -->
-  <div id="dayView">
-    <div class="stats-bar" id="daysStats"></div>
-    <div class="weekdays">
-      <span>Fri</span><span>Sat</span><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span>
-    </div>
-    <div id="scroller">
-      <div id="viewport"><div id="content"></div></div>
-    </div>
-  </div>
+  &lt;!-- DAYS --&gt;
+  &lt;div id=&quot;dayView&quot;&gt;
+    &lt;div class=&quot;stats-bar&quot; id=&quot;daysStats&quot;&gt;&lt;/div&gt;
+    &lt;div class=&quot;weekdays&quot;&gt;
+      &lt;span&gt;Fri&lt;/span&gt;&lt;span&gt;Sat&lt;/span&gt;&lt;span&gt;Sun&lt;/span&gt;&lt;span&gt;Mon&lt;/span&gt;&lt;span&gt;Tue&lt;/span&gt;&lt;span&gt;Wed&lt;/span&gt;&lt;span&gt;Thu&lt;/span&gt;
+    &lt;/div&gt;
+    &lt;div id=&quot;scroller&quot;&gt;
+      &lt;div id=&quot;viewport&quot;&gt;&lt;div id=&quot;content&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
 
-  <!-- WEEKS -->
-  <div id="weeksView" class="grid-view">
-    <div class="stats-bar" id="weeksStats"></div>
-    <div class="full-grid weeks-full" id="weeksGrid"></div>
-  </div>
+  &lt;!-- WEEKS --&gt;
+  &lt;div id=&quot;weeksView&quot; class=&quot;grid-view&quot;&gt;
+    &lt;div class=&quot;stats-bar&quot; id=&quot;weeksStats&quot;&gt;&lt;/div&gt;
+    &lt;div class=&quot;full-grid weeks-full&quot; id=&quot;weeksGrid&quot;&gt;&lt;/div&gt;
+  &lt;/div&gt;
 
-  <!-- MONTHS -->
-  <div id="monthsView" class="grid-view">
-    <div class="stats-bar" id="monthsStats"></div>
-    <div class="full-grid months-full" id="monthsGrid"></div>
-  </div>
+  &lt;!-- MONTHS --&gt;
+  &lt;div id=&quot;monthsView&quot; class=&quot;grid-view&quot;&gt;
+    &lt;div class=&quot;stats-bar&quot; id=&quot;monthsStats&quot;&gt;&lt;/div&gt;
+    &lt;div class=&quot;full-grid months-full&quot; id=&quot;monthsGrid&quot;&gt;&lt;/div&gt;
+  &lt;/div&gt;
 
-  <div id="tooltip">
-    <div class="tt-title"></div>
-    <div class="tt-line" id="ttDates"></div>
-    <div class="tt-line" id="ttAges"></div>
-  </div>
+  &lt;div id=&quot;tooltip&quot;&gt;
+    &lt;div class=&quot;tt-title&quot;&gt;&lt;/div&gt;
+    &lt;div class=&quot;tt-line&quot; id=&quot;ttDates&quot;&gt;&lt;/div&gt;
+    &lt;div class=&quot;tt-line&quot; id=&quot;ttAges&quot;&gt;&lt;/div&gt;
+  &lt;/div&gt;
 
-  <script>
+  &lt;script&gt;
     // ─── Constants ───────────────────────────────────────────────
     const BIRTH = new Date(2007, 5, 15);
     const END   = new Date(2085, 5, 14);
@@ -485,7 +753,7 @@
     const WEEK_START  = 5;
     const ROW_H = 148;
     const BUFFER = 6;
-    const MONTHS = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+    const MONTHS = [&quot;JAN&quot;,&quot;FEB&quot;,&quot;MAR&quot;,&quot;APR&quot;,&quot;MAY&quot;,&quot;JUN&quot;,&quot;JUL&quot;,&quot;AUG&quot;,&quot;SEP&quot;,&quot;OCT&quot;,&quot;NOV&quot;,&quot;DEC&quot;];
 
     // ─── Helpers ─────────────────────────────────────────────────
     function addDays(date, n) {
@@ -499,21 +767,21 @@
       return Math.floor((u2 - u1) / 86400000);
     }
     function formatDate(d) {
-      return `${d.getFullYear()}-${MONTHS[d.getMonth()]}-${String(d.getDate()).padStart(2,"0")}`;
+      return `${d.getFullYear()}-${MONTHS[d.getMonth()]}-${String(d.getDate()).padStart(2,&quot;0&quot;)}`;
     }
     function ageYMD(target) {
       let y = target.getFullYear() - BIRTH.getFullYear();
       let m = target.getMonth() - BIRTH.getMonth();
       let d = target.getDate() - BIRTH.getDate();
-      if (d < 0) { m--; d += new Date(target.getFullYear(), target.getMonth(), 0).getDate(); }
-      if (m < 0) { y--; m += 12; }
-      const ys = String(Math.max(0,y)).padStart(2,"0");
-      const ms = String(Math.max(0,m)).padStart(2,"0");
-      const ds = String(Math.max(0,d)).padStart(2,"0");
-      return { y: ys, m: ms, d: ds, str: () => `${ys}Y-${ms}M-${ds}D` };
+      if (d &lt; 0) { m--; d += new Date(target.getFullYear(), target.getMonth(), 0).getDate(); }
+      if (m &lt; 0) { y--; m += 12; }
+      const ys = String(Math.max(0,y)).padStart(2,&quot;0&quot;);
+      const ms = String(Math.max(0,m)).padStart(2,&quot;0&quot;);
+      const ds = String(Math.max(0,d)).padStart(2,&quot;0&quot;);
+      return { y: ys, m: ms, d: ds, str: () =&gt; `${ys}Y-${ms}M-${ds}D` };
     }
     function isSameDay(a, b) {
-      return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
+      return a.getFullYear()===b.getFullYear() &amp;&amp; a.getMonth()===b.getMonth() &amp;&amp; a.getDate()===b.getDate();
     }
     function startOfWeek(d) {
       const day = d.getDay();
@@ -544,7 +812,7 @@
       let m = date.getMonth() - 5;
       let day = date.getDate();
       let idx = y * 12 + m + 1;
-      if (day < 15) idx -= 1;
+      if (day &lt; 15) idx -= 1;
       return Math.max(1, Math.min(TOTAL_MONTHS, idx));
     }
 
@@ -552,28 +820,28 @@
     function updateProgressAndDaysStats() {
       const today = new Date(); today.setHours(0,0,0,0);
       let current = daysBetween(BIRTH, today) + 1;
-      if (current < 1) current = 1;
-      if (current > TOTAL_DAYS) current = TOTAL_DAYS;
+      if (current &lt; 1) current = 1;
+      if (current &gt; TOTAL_DAYS) current = TOTAL_DAYS;
 
       const lived = Math.max(0, current - 1);
       const remaining = TOTAL_DAYS - current;
 
       const pct = (current / TOTAL_DAYS) * 100;
-      document.getElementById("progressFill").style.width = pct + "%";
-      document.getElementById("progressPct").textContent = pct.toFixed(2).padStart(5,"0") + "%";
+      document.getElementById(&quot;progressFill&quot;).style.width = pct + &quot;%&quot;;
+      document.getElementById(&quot;progressPct&quot;).textContent = pct.toFixed(2).padStart(5,&quot;0&quot;) + &quot;%&quot;;
 
-      document.getElementById("daysStats").innerHTML = `
-        <span>Lived <strong>${lived}</strong></span>
-        <span class="current-label">Current <strong>${current}</strong></span>
-        <span>Remaining <strong>${remaining}</strong></span>
-        <span>Total <strong>${TOTAL_DAYS}</strong></span>
+      document.getElementById(&quot;daysStats&quot;).innerHTML = `
+        &lt;span&gt;Lived &lt;strong&gt;${lived}&lt;/strong&gt;&lt;/span&gt;
+        &lt;span class=&quot;current-label&quot;&gt;Current &lt;strong&gt;${current}&lt;/strong&gt;&lt;/span&gt;
+        &lt;span&gt;Remaining &lt;strong&gt;${remaining}&lt;/strong&gt;&lt;/span&gt;
+        &lt;span&gt;Total &lt;strong&gt;${TOTAL_DAYS}&lt;/strong&gt;&lt;/span&gt;
       `;
     }
 
     // ─── Day view ────────────────────────────────────────────────
-    const scroller = document.getElementById("scroller");
-    const viewport = document.getElementById("viewport");
-    const content  = document.getElementById("content");
+    const scroller = document.getElementById(&quot;scroller&quot;);
+    const viewport = document.getElementById(&quot;viewport&quot;);
+    const content  = document.getElementById(&quot;content&quot;);
     viewport.style.height = `${TOTAL_WEEKS_CALC * ROW_H}px`;
 
     function renderDays() {
@@ -585,206 +853,206 @@
       const frag = document.createDocumentFragment();
       const today = new Date(); today.setHours(0,0,0,0);
 
-      for (let w = startWeek; w <= endWeek; w++) {
+      for (let w = startWeek; w &lt;= endWeek; w++) {
         const weekStart = addDays(firstWeekStart, w * 7);
-        const row = document.createElement("div");
-        row.className = "week-row";
+        const row = document.createElement(&quot;div&quot;);
+        row.className = &quot;week-row&quot;;
         row.style.cssText = `position:absolute;top:${w*ROW_H}px;left:0;right:0`;
 
-        for (let i = 0; i < 7; i++) {
+        for (let i = 0; i &lt; 7; i++) {
           const cellDate = addDays(weekStart, i);
-          const card = document.createElement("div");
-          if (cellDate < BIRTH || cellDate > END) {
-            card.className = "day empty";
+          const card = document.createElement(&quot;div&quot;);
+          if (cellDate &lt; BIRTH || cellDate &gt; END) {
+            card.className = &quot;day empty&quot;;
             row.appendChild(card);
             continue;
           }
           const num = daysBetween(BIRTH, cellDate) + 1;
           const weekN = lifeWeek(cellDate);
           const age = ageYMD(cellDate);
-          const isPast = cellDate < today;
+          const isPast = cellDate &lt; today;
           const isToday = isSameDay(cellDate, today);
-          const isFuture = cellDate > today;
+          const isFuture = cellDate &gt; today;
 
-          card.className = "day";
-          if (isPast) card.classList.add("past");
-          if (isToday) card.classList.add("today");
-          if (isFuture) { card.classList.add("future"); card.classList.add("f"+(w%7)); }
+          card.className = &quot;day&quot;;
+          if (isPast) card.classList.add(&quot;past&quot;);
+          if (isToday) card.classList.add(&quot;today&quot;);
+          if (isFuture) { card.classList.add(&quot;future&quot;); card.classList.add(&quot;f&quot;+(w%7)); }
 
           card.innerHTML = `
-            <div class="line">${formatDate(cellDate)}</div>
-            <div class="line">${age.y}Y-${age.m}M-${age.d}D</div>
-            <div class="line">DAYS--${String(num).padStart(5,"0")}</div>
-            <div class="line">WEEKS--${String(weekN).padStart(4,"0")}</div>
-            <div class="day-marker"></div>`;
+            &lt;div class=&quot;line&quot;&gt;${formatDate(cellDate)}&lt;/div&gt;
+            &lt;div class=&quot;line&quot;&gt;${age.y}Y-${age.m}M-${age.d}D&lt;/div&gt;
+            &lt;div class=&quot;line&quot;&gt;DAYS--${String(num).padStart(5,&quot;0&quot;)}&lt;/div&gt;
+            &lt;div class=&quot;line&quot;&gt;WEEKS--${String(weekN).padStart(4,&quot;0&quot;)}&lt;/div&gt;
+            &lt;div class=&quot;day-marker&quot;&gt;&lt;/div&gt;`;
           row.appendChild(card);
         }
         frag.appendChild(row);
       }
-      content.innerHTML = "";
+      content.innerHTML = &quot;&quot;;
       content.appendChild(frag);
     }
 
     function scrollToDate(date) {
-      if (date < BIRTH) date = BIRTH;
-      if (date > END) date = END;
+      if (date &lt; BIRTH) date = BIRTH;
+      if (date &gt; END) date = END;
       const weekIdx = Math.floor(daysBetween(firstWeekStart, startOfWeek(date)) / 7);
       scroller.scrollTop = Math.max(0, weekIdx * ROW_H - scroller.clientHeight / 3);
       requestAnimationFrame(renderDays);
     }
 
     // ─── Tooltip ─────────────────────────────────────────────────
-    const tooltip = document.getElementById("tooltip");
+    const tooltip = document.getElementById(&quot;tooltip&quot;);
     function showTooltip(e, title, dates, ages) {
-      tooltip.querySelector(".tt-title").textContent = title;
-      document.getElementById("ttDates").textContent = dates;
-      document.getElementById("ttAges").textContent = ages;
-      tooltip.classList.add("visible");
+      tooltip.querySelector(&quot;.tt-title&quot;).textContent = title;
+      document.getElementById(&quot;ttDates&quot;).textContent = dates;
+      document.getElementById(&quot;ttAges&quot;).textContent = ages;
+      tooltip.classList.add(&quot;visible&quot;);
       moveTooltip(e);
     }
     function moveTooltip(e) {
       const pad = 12;
       let x = e.clientX + pad;
       let y = e.clientY + pad;
-      if (x + 240 > window.innerWidth - 6) x = e.clientX - 240 - pad;
-      if (y + 80 > window.innerHeight - 6) y = e.clientY - 80 - pad;
-      tooltip.style.left = x + "px";
-      tooltip.style.top  = y + "px";
+      if (x + 240 &gt; window.innerWidth - 6) x = e.clientX - 240 - pad;
+      if (y + 80 &gt; window.innerHeight - 6) y = e.clientY - 80 - pad;
+      tooltip.style.left = x + &quot;px&quot;;
+      tooltip.style.top  = y + &quot;px&quot;;
     }
-    function hideTooltip() { tooltip.classList.remove("visible"); }
+    function hideTooltip() { tooltip.classList.remove(&quot;visible&quot;); }
 
     // ─── Weeks ───────────────────────────────────────────────────
     function buildWeeksView() {
-      const grid = document.getElementById("weeksGrid");
-      grid.innerHTML = "";
+      const grid = document.getElementById(&quot;weeksGrid&quot;);
+      grid.innerHTML = &quot;&quot;;
       const today = new Date(); today.setHours(0,0,0,0);
       let curWeek = lifeWeek(today);
-      if (curWeek < 1) curWeek = 1;
-      if (curWeek > TOTAL_WEEKS) curWeek = TOTAL_WEEKS;
+      if (curWeek &lt; 1) curWeek = 1;
+      if (curWeek &gt; TOTAL_WEEKS) curWeek = TOTAL_WEEKS;
 
       let lived = 0;
-      for (let w = 1; w <= TOTAL_WEEKS; w++) {
-        const sq = document.createElement("div");
-        sq.className = "sq";
-        if (w < curWeek) { sq.classList.add("lived"); lived++; }
-        if (w === curWeek) sq.classList.add("current");
+      for (let w = 1; w &lt;= TOTAL_WEEKS; w++) {
+        const sq = document.createElement(&quot;div&quot;);
+        sq.className = &quot;sq&quot;;
+        if (w &lt; curWeek) { sq.classList.add(&quot;lived&quot;); lived++; }
+        if (w === curWeek) sq.classList.add(&quot;current&quot;);
 
         const weekStart = addDays(firstWeekStart, (w - 1) * 7);
         const weekEnd   = addDays(weekStart, 6);
-        const dStart = weekStart < BIRTH ? BIRTH : weekStart;
-        const dEnd   = weekEnd > END ? END : weekEnd;
+        const dStart = weekStart &lt; BIRTH ? BIRTH : weekStart;
+        const dEnd   = weekEnd &gt; END ? END : weekEnd;
 
-        sq.addEventListener("mouseenter", e => {
+        sq.addEventListener(&quot;mouseenter&quot;, e =&gt; {
           showTooltip(e,
-            `WEEKS--${String(w).padStart(4,"0")}`,
+            `WEEKS--${String(w).padStart(4,&quot;0&quot;)}`,
             `${formatDate(dStart)} → ${formatDate(dEnd)}`,
             `${ageYMD(dStart).str()} → ${ageYMD(dEnd).str()}`
           );
         });
-        sq.addEventListener("mousemove", moveTooltip);
-        sq.addEventListener("mouseleave", hideTooltip);
+        sq.addEventListener(&quot;mousemove&quot;, moveTooltip);
+        sq.addEventListener(&quot;mouseleave&quot;, hideTooltip);
         grid.appendChild(sq);
       }
 
       const remaining = TOTAL_WEEKS - lived - 1;
-      document.getElementById("weeksStats").innerHTML = `
-        <span>Lived <strong>${lived}</strong></span>
-        <span class="current-label">Current <strong>${curWeek}</strong></span>
-        <span>Remaining <strong>${Math.max(0,remaining)}</strong></span>
-        <span>Total <strong>${TOTAL_WEEKS}</strong></span>
+      document.getElementById(&quot;weeksStats&quot;).innerHTML = `
+        &lt;span&gt;Lived &lt;strong&gt;${lived}&lt;/strong&gt;&lt;/span&gt;
+        &lt;span class=&quot;current-label&quot;&gt;Current &lt;strong&gt;${curWeek}&lt;/strong&gt;&lt;/span&gt;
+        &lt;span&gt;Remaining &lt;strong&gt;${Math.max(0,remaining)}&lt;/strong&gt;&lt;/span&gt;
+        &lt;span&gt;Total &lt;strong&gt;${TOTAL_WEEKS}&lt;/strong&gt;&lt;/span&gt;
       `;
     }
 
     // ─── Months ──────────────────────────────────────────────────
     function buildMonthsView() {
-      const grid = document.getElementById("monthsGrid");
-      grid.innerHTML = "";
+      const grid = document.getElementById(&quot;monthsGrid&quot;);
+      grid.innerHTML = &quot;&quot;;
       const today = new Date(); today.setHours(0,0,0,0);
       let curMonth = lifeMonth(today);
-      if (curMonth < 1) curMonth = 1;
-      if (curMonth > TOTAL_MONTHS) curMonth = TOTAL_MONTHS;
+      if (curMonth &lt; 1) curMonth = 1;
+      if (curMonth &gt; TOTAL_MONTHS) curMonth = TOTAL_MONTHS;
 
       let lived = 0;
-      for (let m = 1; m <= TOTAL_MONTHS; m++) {
-        const sq = document.createElement("div");
-        sq.className = "sq";
-        if (m < curMonth) { sq.classList.add("lived"); lived++; }
-        if (m === curMonth) sq.classList.add("current");
+      for (let m = 1; m &lt;= TOTAL_MONTHS; m++) {
+        const sq = document.createElement(&quot;div&quot;);
+        sq.className = &quot;sq&quot;;
+        if (m &lt; curMonth) { sq.classList.add(&quot;lived&quot;); lived++; }
+        if (m === curMonth) sq.classList.add(&quot;current&quot;);
 
         let dStart = customMonthStart(m);
         let dEnd   = customMonthEnd(m);
-        if (dStart < BIRTH) dStart = BIRTH;
-        if (dEnd > END) dEnd = END;
+        if (dStart &lt; BIRTH) dStart = BIRTH;
+        if (dEnd &gt; END) dEnd = END;
 
-        sq.addEventListener("mouseenter", e => {
+        sq.addEventListener(&quot;mouseenter&quot;, e =&gt; {
           showTooltip(e,
-            `MONTHS--${String(m).padStart(3,"0")}`,
+            `MONTHS--${String(m).padStart(3,&quot;0&quot;)}`,
             `${formatDate(dStart)} → ${formatDate(dEnd)}`,
             `${ageYMD(dStart).str()} → ${ageYMD(dEnd).str()}`
           );
         });
-        sq.addEventListener("mousemove", moveTooltip);
-        sq.addEventListener("mouseleave", hideTooltip);
+        sq.addEventListener(&quot;mousemove&quot;, moveTooltip);
+        sq.addEventListener(&quot;mouseleave&quot;, hideTooltip);
         grid.appendChild(sq);
       }
 
       const remaining = TOTAL_MONTHS - lived - 1;
-      document.getElementById("monthsStats").innerHTML = `
-        <span>Lived <strong>${lived}</strong></span>
-        <span class="current-label">Current <strong>${curMonth}</strong></span>
-        <span>Remaining <strong>${Math.max(0,remaining)}</strong></span>
-        <span>Total <strong>${TOTAL_MONTHS}</strong></span>
+      document.getElementById(&quot;monthsStats&quot;).innerHTML = `
+        &lt;span&gt;Lived &lt;strong&gt;${lived}&lt;/strong&gt;&lt;/span&gt;
+        &lt;span class=&quot;current-label&quot;&gt;Current &lt;strong&gt;${curMonth}&lt;/strong&gt;&lt;/span&gt;
+        &lt;span&gt;Remaining &lt;strong&gt;${Math.max(0,remaining)}&lt;/strong&gt;&lt;/span&gt;
+        &lt;span&gt;Total &lt;strong&gt;${TOTAL_MONTHS}&lt;/strong&gt;&lt;/span&gt;
       `;
     }
 
     // ─── Tabs ────────────────────────────────────────────────────
-    document.querySelectorAll(".tab-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
+    document.querySelectorAll(&quot;.tab-btn&quot;).forEach(btn =&gt; {
+      btn.addEventListener(&quot;click&quot;, () =&gt; {
+        document.querySelectorAll(&quot;.tab-btn&quot;).forEach(b =&gt; b.classList.remove(&quot;active&quot;));
+        btn.classList.add(&quot;active&quot;);
         const tab = btn.dataset.tab;
 
-        document.getElementById("dayView").classList.toggle("hidden", tab !== "days");
-        document.getElementById("weeksView").classList.toggle("active", tab === "weeks");
-        document.getElementById("monthsView").classList.toggle("active", tab === "months");
+        document.getElementById(&quot;dayView&quot;).classList.toggle(&quot;hidden&quot;, tab !== &quot;days&quot;);
+        document.getElementById(&quot;weeksView&quot;).classList.toggle(&quot;active&quot;, tab === &quot;weeks&quot;);
+        document.getElementById(&quot;monthsView&quot;).classList.toggle(&quot;active&quot;, tab === &quot;months&quot;);
       });
     });
 
     // ─── Events ──────────────────────────────────────────────────
     let ticking = false;
-    scroller.addEventListener("scroll", () => {
+    scroller.addEventListener(&quot;scroll&quot;, () =&gt; {
       if (!ticking) {
-        requestAnimationFrame(() => { renderDays(); ticking = false; });
+        requestAnimationFrame(() =&gt; { renderDays(); ticking = false; });
         ticking = true;
       }
     });
 
     function goToDaysAndScroll(date) {
-      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-      document.querySelector('.tab-btn[data-tab="days"]').classList.add("active");
-      document.getElementById("dayView").classList.remove("hidden");
-      document.getElementById("weeksView").classList.remove("active");
-      document.getElementById("monthsView").classList.remove("active");
+      document.querySelectorAll(&quot;.tab-btn&quot;).forEach(b =&gt; b.classList.remove(&quot;active&quot;));
+      document.querySelector(&#x27;.tab-btn[data-tab=&quot;days&quot;]&#x27;).classList.add(&quot;active&quot;);
+      document.getElementById(&quot;dayView&quot;).classList.remove(&quot;hidden&quot;);
+      document.getElementById(&quot;weeksView&quot;).classList.remove(&quot;active&quot;);
+      document.getElementById(&quot;monthsView&quot;).classList.remove(&quot;active&quot;);
       scrollToDate(date);
     }
 
-    document.getElementById("jumpBtn").addEventListener("click", () => {
-      const val = document.getElementById("jumpDate").value;
+    document.getElementById(&quot;jumpBtn&quot;).addEventListener(&quot;click&quot;, () =&gt; {
+      const val = document.getElementById(&quot;jumpDate&quot;).value;
       if (!val) return;
-      goToDaysAndScroll(new Date(val + "T00:00:00"));
+      goToDaysAndScroll(new Date(val + &quot;T00:00:00&quot;));
     });
 
-    document.getElementById("todayBtn").addEventListener("click", () => goToDaysAndScroll(new Date()));
-    document.getElementById("birthBtn").addEventListener("click", () => goToDaysAndScroll(BIRTH));
-    document.getElementById("endBtn").addEventListener("click", () => goToDaysAndScroll(END));
+    document.getElementById(&quot;todayBtn&quot;).addEventListener(&quot;click&quot;, () =&gt; goToDaysAndScroll(new Date()));
+    document.getElementById(&quot;birthBtn&quot;).addEventListener(&quot;click&quot;, () =&gt; goToDaysAndScroll(BIRTH));
+    document.getElementById(&quot;endBtn&quot;).addEventListener(&quot;click&quot;, () =&gt; goToDaysAndScroll(END));
 
-    document.getElementById("jumpDate").addEventListener("keydown", e => {
-      if (e.key === "Enter") document.getElementById("jumpBtn").click();
+    document.getElementById(&quot;jumpDate&quot;).addEventListener(&quot;keydown&quot;, e =&gt; {
+      if (e.key === &quot;Enter&quot;) document.getElementById(&quot;jumpBtn&quot;).click();
     });
 
-    const jumpDate = document.getElementById("jumpDate");
-    jumpDate.addEventListener("click", () => {
-      if (typeof jumpDate.showPicker === "function") {
+    const jumpDate = document.getElementById(&quot;jumpDate&quot;);
+    jumpDate.addEventListener(&quot;click&quot;, () =&gt; {
+      if (typeof jumpDate.showPicker === &quot;function&quot;) {
         try { jumpDate.showPicker(); } catch (_) {}
       }
     });
@@ -794,10 +1062,555 @@
     buildWeeksView();
     buildMonthsView();
     renderDays();
-    requestAnimationFrame(() => scrollToDate(new Date()));
+    requestAnimationFrame(() =&gt; scrollToDate(new Date()));
 
     jumpDate.value = new Date().toISOString().slice(0, 10);
-    window.addEventListener("resize", () => renderDays());
+    window.addEventListener(&quot;resize&quot;, () =&gt; renderDays());
+  &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;"
+      ></iframe>
+
+      <iframe
+        class="panel"
+        id="panel-age"
+        title="Ritish Lamsal Personal Age Calendar"
+        srcdoc="&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;UTF-8&quot; /&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot; /&gt;
+  &lt;title&gt;RITISH LAMSAL PERSONAL AGE CALENDAR&lt;/title&gt;
+  &lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.googleapis.com&quot; /&gt;
+  &lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.gstatic.com&quot; crossorigin /&gt;
+  &lt;link href=&quot;https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&amp;display=swap&quot; rel=&quot;stylesheet&quot; /&gt;
+  &lt;style&gt;
+    :root {
+      --bg: #0d0f12;
+      --surface: #15181e;
+      --surface-2: #1c2028;
+      --border: #2a2f3a;
+      --text: #e6e9ef;
+      --text-muted: #8b93a7;
+      --accent: #5b8def;
+      --today: #3dd68c;
+      --today-bg: rgba(61, 214, 140, 0.12);
+      --weekend: #f07178;
+      --radius: 8px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: &#x27;JetBrains Mono&#x27;, monospace;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.3;
+      font-size: 12px;
+      -webkit-font-smoothing: antialiased;
+      text-transform: uppercase;
+    }
+
+    .app {
+      max-width: 1480px;
+      margin: 0 auto;
+      padding: 0.55rem 0.6rem 1rem;
+    }
+
+    header {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.65rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .page-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      color: var(--text);
+      white-space: nowrap;
+      line-height: 1;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .nav-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      width: 32px;
+      height: 32px;
+      border-radius: 7px;
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .nav-btn:hover:not(:disabled) {
+      background: var(--surface-2);
+      border-color: var(--accent);
+    }
+
+    .nav-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .year-select {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.7rem;
+      font-weight: 500;
+      padding: 0.38rem 1.7rem 0.38rem 0.75rem;
+      border-radius: 7px;
+      cursor: pointer;
+      min-width: 220px;
+      text-align: center;
+      appearance: none;
+      background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns=&#x27;http://www.w3.org/2000/svg&#x27; width=&#x27;10&#x27; height=&#x27;10&#x27; viewBox=&#x27;0 0 12 12&#x27;%3E%3Cpath fill=&#x27;%238b93a7&#x27; d=&#x27;M6 8L1 3h10z&#x27;/%3E%3C/svg%3E&quot;);
+      background-repeat: no-repeat;
+      background-position: right 0.55rem center;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .year-select:hover {
+      border-color: var(--accent);
+      background: #22262f;
+    }
+
+    .year-select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(91, 141, 239, 0.25);
+    }
+
+    .months-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 0.55rem;
+    }
+
+    .month-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .month-header {
+      background: var(--surface-2);
+      padding: 0.32rem 0.45rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+
+    .month-name { font-weight: 600; font-size: 0.7rem; }
+    .month-sub { font-size: 0.55rem; color: var(--text-muted); }
+
+    .weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      font-size: 0.5rem;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 0.2rem 0;
+      font-weight: 500;
+    }
+
+    .weekdays span:first-child,
+    .weekdays span:last-child { color: var(--weekend); }
+
+    .days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 1px;
+      background: var(--border);
+      padding: 1px;
+    }
+
+    .day {
+      background: var(--surface);
+      min-height: 40px;
+      padding: 0.18rem 0.08rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.08rem;
+      text-align: center;
+      transition: background 0.12s;
+    }
+
+    .day.empty { background: var(--bg); }
+    .day:not(.empty):hover { background: var(--surface-2); }
+
+    .day.today {
+      background: var(--today-bg);
+      box-shadow: inset 0 0 0 1.5px var(--today);
+    }
+
+    .bs-day {
+      font-size: 0.75rem;
+      font-weight: 600;
+      line-height: 1;
+    }
+
+    .day.weekend .bs-day { color: var(--weekend); }
+
+    .ad-day {
+      font-size: 0.46rem;
+      color: var(--text-muted);
+      font-weight: 400;
+      letter-spacing: -0.01em;
+      line-height: 1.1;
+    }
+
+    .day.today .bs-day { color: var(--today); }
+
+    @media (max-width: 1200px) {
+      .months-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    @media (max-width: 850px) {
+      .months-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    @media (max-width: 600px) {
+      .months-grid { grid-template-columns: 1fr; gap: 0.5rem; }
+      .day { min-height: 36px; }
+      .page-title { font-size: 0.65rem; }
+      header { gap: 0.6rem; }
+    }
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;div class=&quot;app&quot;&gt;
+    &lt;header&gt;
+      &lt;div class=&quot;page-title&quot;&gt;RITISH LAMSAL PERSONAL AGE CALENDAR&lt;/div&gt;
+      &lt;div class=&quot;controls&quot;&gt;
+        &lt;button class=&quot;nav-btn&quot; id=&quot;prevBtn&quot; aria-label=&quot;Previous&quot;&gt;‹&lt;/button&gt;
+        &lt;select class=&quot;year-select&quot; id=&quot;yearSelect&quot; aria-label=&quot;Select year&quot;&gt;&lt;/select&gt;
+        &lt;button class=&quot;nav-btn&quot; id=&quot;nextBtn&quot; aria-label=&quot;Next&quot;&gt;›&lt;/button&gt;
+      &lt;/div&gt;
+    &lt;/header&gt;
+
+    &lt;div class=&quot;months-grid&quot; id=&quot;calendar&quot;&gt;&lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;script&gt;
+    // ============================================================
+    // ADD NEW YEARS HERE (just append the array)
+    // [BAISAKH, JESTHA, ASHADH, SHRAWAN, BHADRA, ASHWIN,
+    //  KARTIK, MANGSIR, POUSH, MAGH, FALGUN, CHAITRA]
+    // ============================================================
+    const DAYS_IN_MONTH = {
+      2064: [31,31,32,32,31,30,30,29,30,29,30,30],
+      2065: [31,32,31,32,31,30,30,30,29,29,30,31],
+      2066: [31,31,31,32,31,31,29,30,30,29,29,31],
+      2067: [31,31,32,31,31,31,30,29,30,29,30,30],
+      2068: [31,31,32,32,31,30,30,29,30,29,30,30],
+      2069: [31,32,31,32,31,30,30,30,29,29,30,31],
+      2070: [31,31,31,32,31,31,29,30,30,29,30,30],
+      2071: [31,31,32,31,31,31,30,29,30,29,30,30],
+      2072: [31,32,31,32,31,30,30,29,30,29,30,30],
+      2073: [31,32,31,32,31,30,30,30,29,29,30,31],
+      2074: [31,31,31,32,31,31,30,29,30,29,30,30],
+      2075: [31,31,32,31,31,31,30,29,30,29,30,30],
+      2076: [31,32,31,32,31,30,30,30,29,29,30,30],
+      2077: [31,32,31,32,31,30,30,30,29,30,29,31],
+      2078: [31,31,31,32,31,31,30,29,30,29,30,30],
+      2079: [31,31,32,31,31,31,30,29,30,29,30,30],
+      2080: [31,32,31,32,31,30,30,30,29,29,30,30],
+      2081: [31,32,31,32,31,30,30,30,29,30,29,31],
+      2082: [31,31,32,31,31,31,30,29,30,29,30,30],
+      2083: [31,31,32,31,31,30,30,30,29,30,30,30],
+      2084: [31,31,32,31,31,30,30,30,29,30,30,30]
+    };
+
+    const MONTH_NAMES = [
+      &quot;BAISAKH&quot;, &quot;JESTHA&quot;, &quot;ASHADH&quot;, &quot;SHRAWAN&quot;,
+      &quot;BHADRA&quot;, &quot;ASHWIN&quot;, &quot;KARTIK&quot;, &quot;MANGSIR&quot;,
+      &quot;POUSH&quot;, &quot;MAGH&quot;, &quot;FALGUN&quot;, &quot;CHAITRA&quot;
+    ];
+
+    const MONTH_SHORT = [&quot;BAI&quot;,&quot;JES&quot;,&quot;ASH&quot;,&quot;SHR&quot;,&quot;BHA&quot;,&quot;ASW&quot;,&quot;KAR&quot;,&quot;MAN&quot;,&quot;POU&quot;,&quot;MAG&quot;,&quot;FAL&quot;,&quot;CHA&quot;];
+    const MONTH_ABBR = [&quot;JAN&quot;,&quot;FEB&quot;,&quot;MAR&quot;,&quot;APR&quot;,&quot;MAY&quot;,&quot;JUN&quot;,&quot;JUL&quot;,&quot;AUG&quot;,&quot;SEP&quot;,&quot;OCT&quot;,&quot;NOV&quot;,&quot;DEC&quot;];
+
+    const REF_BS_YEAR = 2064;
+    const REF_AD = new Date(2007, 3, 14);
+
+    function daysBeforeMonth(year, monthIndex) {
+      const days = DAYS_IN_MONTH[year];
+      if (!days) return 0;
+      let total = 0;
+      for (let i = 0; i &lt; monthIndex; i++) total += days[i];
+      return total;
+    }
+
+    function bsToAd(bsYear, monthIndex, day) {
+      if (!DAYS_IN_MONTH[bsYear]) return null;
+      let totalDays = 0;
+      for (let y = REF_BS_YEAR; y &lt; bsYear; y++) {
+        const d = DAYS_IN_MONTH[y];
+        if (!d) return null;
+        totalDays += d.reduce((a, b) =&gt; a + b, 0);
+      }
+      totalDays += daysBeforeMonth(bsYear, monthIndex);
+      totalDays += (day - 1);
+      const result = new Date(REF_AD.getTime());
+      result.setDate(result.getDate() + totalDays);
+      return result;
+    }
+
+    function getFiscalMonths(startYear) {
+      const months = [];
+      for (let m = 2; m &lt;= 11; m++) months.push({ year: startYear, monthIndex: m });
+      months.push({ year: startYear + 1, monthIndex: 0 });
+      months.push({ year: startYear + 1, monthIndex: 1 });
+      return months;
+    }
+
+    function formatAdCompact(date) {
+      if (!date) return &quot;&quot;;
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, &quot;0&quot;);
+      const d = String(date.getDate()).padStart(2, &quot;0&quot;);
+      return `${y} ${m}-${d}`;
+    }
+
+    function formatHover(year, monthIndex, day, ad) {
+      const bs = `${year}-${MONTH_SHORT[monthIndex]}-${String(day).padStart(2,&quot;0&quot;)}`;
+      const g = `${ad.getFullYear()}-${MONTH_ABBR[ad.getMonth()]}-${String(ad.getDate()).padStart(2,&quot;0&quot;)}`;
+      return `${bs}  •  ${g}`;
+    }
+
+    function pad2(n) { return String(n).padStart(2, &quot;0&quot;); }
+
+    function isSameDay(d1, d2) {
+      return d1.getFullYear() === d2.getFullYear() &amp;&amp;
+             d1.getMonth() === d2.getMonth() &amp;&amp;
+             d1.getDate() === d2.getDate();
+    }
+
+    function yearLabel(bsStartYear) {
+      return `YEAR-${String(bsStartYear - 2063).padStart(2, &quot;0&quot;)}`;
+    }
+
+    function getShiftAmount(daysInMonth, startWeekday) {
+      if (daysInMonth === 29) return 0;
+      if (daysInMonth === 30) return startWeekday === 6 ? 1 : 0;
+      if (daysInMonth === 31) {
+        if (startWeekday === 5) return 1;
+        if (startWeekday === 6) return 2;
+        return 0;
+      }
+      if (daysInMonth === 32) {
+        if (startWeekday === 4) return 1;
+        if (startWeekday === 5) return 2;
+        if (startWeekday === 6) return 3;
+        return 0;
+      }
+      return 0;
+    }
+
+    function renderDayCell(year, monthIndex, d, today) {
+      const ad = bsToAd(year, monthIndex, d);
+      if (!ad) return `&lt;div class=&quot;day empty&quot;&gt;&lt;/div&gt;`;
+
+      const isWeekend = ad.getDay() === 0 || ad.getDay() === 6;
+      const isToday = isSameDay(ad, today);
+      const classes = [&quot;day&quot;];
+      if (isWeekend) classes.push(&quot;weekend&quot;);
+      if (isToday) classes.push(&quot;today&quot;);
+
+      return `
+        &lt;div class=&quot;${classes.join(&quot; &quot;)}&quot; title=&quot;${formatHover(year, monthIndex, d, ad)}&quot;&gt;
+          &lt;span class=&quot;bs-day&quot;&gt;${pad2(d)}&lt;/span&gt;
+          &lt;span class=&quot;ad-day&quot;&gt;${formatAdCompact(ad)}&lt;/span&gt;
+        &lt;/div&gt;
+      `;
+    }
+
+    function renderMonth(year, monthIndex) {
+      const daysInMonth = DAYS_IN_MONTH[year]?.[monthIndex];
+      if (!daysInMonth) return &quot;&quot;;
+
+      const firstAd = bsToAd(year, monthIndex, 1);
+      if (!firstAd) return &quot;&quot;;
+
+      const startWeekday = firstAd.getDay();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const shift = getShiftAmount(daysInMonth, startWeekday);
+
+      let html = `
+        &lt;div class=&quot;month-card&quot;&gt;
+          &lt;div class=&quot;month-header&quot;&gt;
+            &lt;span class=&quot;month-name&quot;&gt;${MONTH_NAMES[monthIndex]} ${year}&lt;/span&gt;
+            &lt;span class=&quot;month-sub&quot;&gt;${daysInMonth}D&lt;/span&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;weekdays&quot;&gt;
+            &lt;span&gt;SUN&lt;/span&gt;&lt;span&gt;MON&lt;/span&gt;&lt;span&gt;TUE&lt;/span&gt;&lt;span&gt;WED&lt;/span&gt;&lt;span&gt;THU&lt;/span&gt;&lt;span&gt;FRI&lt;/span&gt;&lt;span&gt;SAT&lt;/span&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;days&quot;&gt;
+      `;
+
+      if (shift === 0) {
+        for (let i = 0; i &lt; startWeekday; i++) html += `&lt;div class=&quot;day empty&quot;&gt;&lt;/div&gt;`;
+        for (let d = 1; d &lt;= daysInMonth; d++) html += renderDayCell(year, monthIndex, d, today);
+      } else {
+        for (let d = daysInMonth - shift + 1; d &lt;= daysInMonth; d++) {
+          html += renderDayCell(year, monthIndex, d, today);
+        }
+        const empties = (startWeekday - shift + 7) % 7;
+        for (let i = 0; i &lt; empties; i++) html += `&lt;div class=&quot;day empty&quot;&gt;&lt;/div&gt;`;
+        for (let d = 1; d &lt;= daysInMonth - shift; d++) {
+          html += renderDayCell(year, monthIndex, d, today);
+        }
+      }
+
+      html += `&lt;/div&gt;&lt;/div&gt;`;
+      return html;
+    }
+
+    function getAvailableFiscalYears() {
+      const years = Object.keys(DAYS_IN_MONTH).map(Number).sort((a, b) =&gt; a - b);
+      return years.filter(y =&gt; DAYS_IN_MONTH[y + 1]);
+    }
+
+    function findFiscalYearForDate(date) {
+      const available = getAvailableFiscalYears();
+      for (const y of available) {
+        const first = bsToAd(y, 2, 1);
+        const last = bsToAd(y + 1, 1, DAYS_IN_MONTH[y + 1][1]);
+        if (first &amp;&amp; last &amp;&amp; date &gt;= first &amp;&amp; date &lt;= last) return y;
+      }
+      return available[0] || 2064;
+    }
+
+    let currentYear = 2064;
+
+    function populateSelect() {
+      const select = document.getElementById(&quot;yearSelect&quot;);
+      const available = getAvailableFiscalYears();
+      select.innerHTML = &quot;&quot;;
+      available.forEach(y =&gt; {
+        const opt = document.createElement(&quot;option&quot;);
+        opt.value = y;
+        opt.textContent = `${yearLabel(y)}  (${y} ASH – ${y + 1} JES)`;
+        select.appendChild(opt);
+      });
+    }
+
+    function render() {
+      const container = document.getElementById(&quot;calendar&quot;);
+      const available = getAvailableFiscalYears();
+      if (!available.includes(currentYear)) currentYear = available[0] || 2064;
+
+      let html = &quot;&quot;;
+      getFiscalMonths(currentYear).forEach(({ year, monthIndex }) =&gt; {
+        html += renderMonth(year, monthIndex);
+      });
+      container.innerHTML = html;
+
+      document.getElementById(&quot;yearSelect&quot;).value = currentYear;
+      const idx = available.indexOf(currentYear);
+      document.getElementById(&quot;prevBtn&quot;).disabled = idx &lt;= 0;
+      document.getElementById(&quot;nextBtn&quot;).disabled = idx &gt;= available.length - 1;
+    }
+
+    populateSelect();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    currentYear = findFiscalYearForDate(today);
+    render();
+
+    document.getElementById(&quot;prevBtn&quot;).addEventListener(&quot;click&quot;, () =&gt; {
+      const available = getAvailableFiscalYears();
+      const idx = available.indexOf(currentYear);
+      if (idx &gt; 0) { currentYear = available[idx - 1]; render(); }
+    });
+
+    document.getElementById(&quot;nextBtn&quot;).addEventListener(&quot;click&quot;, () =&gt; {
+      const available = getAvailableFiscalYears();
+      const idx = available.indexOf(currentYear);
+      if (idx &lt; available.length - 1) { currentYear = available[idx + 1]; render(); }
+    });
+
+    document.getElementById(&quot;yearSelect&quot;).addEventListener(&quot;change&quot;, (e) =&gt; {
+      currentYear = parseInt(e.target.value, 10);
+      render();
+    });
+  &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;"
+      ></iframe>
+    </main>
+  </div>
+
+  <script>
+    const navItems = document.querySelectorAll(".nav-item");
+    const panels = document.querySelectorAll(".panel");
+    const sidebar = document.getElementById("sidebar");
+    const menuBtn = document.getElementById("menuBtn");
+    const overlay = document.getElementById("overlay");
+
+    function openSidebar() {
+      sidebar.classList.add("open");
+      menuBtn.classList.add("open");
+      overlay.classList.add("visible");
+    }
+
+    function closeSidebar() {
+      sidebar.classList.remove("open");
+      menuBtn.classList.remove("open");
+      overlay.classList.remove("visible");
+    }
+
+    function toggleSidebar() {
+      if (sidebar.classList.contains("open")) {
+        closeSidebar();
+      } else {
+        openSidebar();
+      }
+    }
+
+    menuBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleSidebar();
+    });
+
+    overlay.addEventListener("click", closeSidebar);
+
+    function switchPanel(name) {
+      navItems.forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.panel === name);
+      });
+      panels.forEach(panel => {
+        panel.classList.toggle("active", panel.id === "panel-" + name);
+      });
+      closeSidebar();
+    }
+
+    navItems.forEach(btn => {
+      btn.addEventListener("click", () => switchPanel(btn.dataset.panel));
+    });
   </script>
 </body>
 </html>
